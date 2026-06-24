@@ -13,17 +13,15 @@ echo -e "${BLUE}║     Localmac Uninstaller             ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════╝${NC}"
 echo ""
 echo -e "${YELLOW}This will remove:${NC}"
-echo "  • Localmac.app from /Applications"
-echo "  • All Localmac config files (~/.localmac)"
-echo "  • SSL certificates (~/.localmac/certs)"
+echo "  • Localmac.app"
+echo "  • All config files (~/.localmac)"
+echo "  • SSL certificates"
 echo "  • Saved sites data"
 echo "  • Nginx site configs for Localmac-managed sites"
-echo "  • Localmac preferences and logs"
-echo "  • Homebrew tap (ProCloudifyHQ/localmac)"
+echo "  • Preferences, logs, and DNS rules"
 echo ""
 echo -e "${YELLOW}This will NOT remove:${NC}"
-echo "  • Homebrew itself"
-echo "  • PHP, Nginx, MySQL or other services"
+echo "  • Homebrew, PHP, Nginx, MySQL or other services"
 echo "  • Your site files in ~/Sites"
 echo "  • Your databases"
 echo ""
@@ -41,93 +39,81 @@ echo -e "  ${BLUE}→${NC} Quitting Localmac..."
 osascript -e 'quit app "Localmac"' 2>/dev/null || true
 sleep 1
 
-# Remove app
-if [ -d "/Applications/Localmac.app" ]; then
-    echo -e "  ${BLUE}→${NC} Removing Localmac.app..."
-    rm -rf "/Applications/Localmac.app"
-    echo -e "  ${GREEN}✓${NC} Removed /Applications/Localmac.app"
+# ─────────────────────────────────────────────
+# Detect install method
+# ─────────────────────────────────────────────
+HOMEBREW_INSTALLED=false
+if command -v brew &>/dev/null; then
+    if brew list --cask 2>/dev/null | grep -q "^localmac$"; then
+        HOMEBREW_INSTALLED=true
+    fi
 fi
 
-# Remove launch-at-login registration
-echo -e "  ${BLUE}→${NC} Removing login item..."
+if [ "$HOMEBREW_INSTALLED" = true ]; then
+    echo -e "  ${BLUE}→${NC} Detected Homebrew installation — using brew to uninstall..."
+    brew uninstall --cask --zap localmac
+    echo -e "  ${GREEN}✓${NC} Removed via Homebrew (--zap cleans all files)"
+else
+    # Manual install — remove everything by hand
+    echo -e "  ${BLUE}→${NC} Detected manual installation..."
+
+    if [ -d "/Applications/Localmac.app" ]; then
+        echo -e "  ${BLUE}→${NC} Removing Localmac.app..."
+        rm -rf "/Applications/Localmac.app"
+        echo -e "  ${GREEN}✓${NC} Removed /Applications/Localmac.app"
+    fi
+
+    [ -d "$HOME/.localmac" ] && rm -rf "$HOME/.localmac" && echo -e "  ${GREEN}✓${NC} Removed ~/.localmac"
+    [ -f "$HOME/Library/Preferences/com.localmac.app.plist" ] && rm -f "$HOME/Library/Preferences/com.localmac.app.plist" && echo -e "  ${GREEN}✓${NC} Removed preferences"
+    [ -d "$HOME/Library/Application Support/Localmac" ] && rm -rf "$HOME/Library/Application Support/Localmac" && echo -e "  ${GREEN}✓${NC} Removed Application Support"
+    [ -d "$HOME/Library/Logs/Localmac" ] && rm -rf "$HOME/Library/Logs/Localmac" && echo -e "  ${GREEN}✓${NC} Removed logs"
+fi
+
+# ─────────────────────────────────────────────
+# Shared cleanup (regardless of install method)
+# ─────────────────────────────────────────────
+
+# Remove launch-at-login
 osascript -e 'tell application "System Events" to delete every login item whose name is "Localmac"' 2>/dev/null || true
 
-# Remove config and certs
-if [ -d "$HOME/.localmac" ]; then
-    echo -e "  ${BLUE}→${NC} Removing ~/.localmac..."
-    rm -rf "$HOME/.localmac"
-    echo -e "  ${GREEN}✓${NC} Removed ~/.localmac"
-fi
-
-# Remove preferences
-PLIST="$HOME/Library/Preferences/com.localmac.app.plist"
-if [ -f "$PLIST" ]; then
-    echo -e "  ${BLUE}→${NC} Removing preferences..."
-    rm -f "$PLIST"
-    echo -e "  ${GREEN}✓${NC} Removed preferences"
-fi
-
-# Remove Application Support
-APP_SUPPORT="$HOME/Library/Application Support/Localmac"
-if [ -d "$APP_SUPPORT" ]; then
-    echo -e "  ${BLUE}→${NC} Removing Application Support data..."
-    rm -rf "$APP_SUPPORT"
-    echo -e "  ${GREEN}✓${NC} Removed Application Support"
-fi
-
-# Remove logs
-LOGS="$HOME/Library/Logs/Localmac"
-if [ -d "$LOGS" ]; then
-    echo -e "  ${BLUE}→${NC} Removing logs..."
-    rm -rf "$LOGS"
-    echo -e "  ${GREEN}✓${NC} Removed logs"
-fi
-
-# Remove Nginx site configs managed by Localmac
+# Remove Nginx site configs
 NGINX_SITES="/opt/homebrew/etc/nginx/servers"
 if [ -d "$NGINX_SITES" ]; then
-    echo -e "  ${BLUE}→${NC} Removing Localmac nginx configs..."
-    find "$NGINX_SITES" -name "*.test.conf" -delete 2>/dev/null || true
-    echo -e "  ${GREEN}✓${NC} Removed nginx site configs"
+    COUNT=$(find "$NGINX_SITES" -name "*.test.conf" 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$COUNT" -gt 0 ]; then
+        find "$NGINX_SITES" -name "*.test.conf" -delete
+        echo -e "  ${GREEN}✓${NC} Removed $COUNT nginx site config(s)"
+    fi
 fi
 
 # Remove dnsmasq .test rule
 DNSMASQ_CONF="/opt/homebrew/etc/dnsmasq.conf"
 if [ -f "$DNSMASQ_CONF" ]; then
-    echo -e "  ${BLUE}→${NC} Removing dnsmasq .test rule..."
     sed -i '' '/address=\/.test\/127.0.0.1/d' "$DNSMASQ_CONF" 2>/dev/null || true
-    echo -e "  ${GREEN}✓${NC} Removed dnsmasq rule"
+    echo -e "  ${GREEN}✓${NC} Removed dnsmasq .test rule"
 fi
 
 # Remove /etc/resolver/test
 if [ -f "/etc/resolver/test" ]; then
-    echo -e "  ${BLUE}→${NC} Removing DNS resolver..."
     sudo rm -f "/etc/resolver/test"
     echo -e "  ${GREEN}✓${NC} Removed /etc/resolver/test"
 fi
 
 # Remove Homebrew tap
-if brew tap | grep -q "procloudifyhq/localmac"; then
-    echo -e "  ${BLUE}→${NC} Removing Homebrew tap..."
+if command -v brew &>/dev/null && brew tap 2>/dev/null | grep -q "procloudifyhq/localmac"; then
     brew untap ProCloudifyHQ/localmac 2>/dev/null || true
     echo -e "  ${GREEN}✓${NC} Removed Homebrew tap"
 fi
 
-# Reload dnsmasq if running
-if brew services list | grep -q "dnsmasq started"; then
-    echo -e "  ${BLUE}→${NC} Reloading dnsmasq..."
-    brew services restart dnsmasq 2>/dev/null || true
-fi
-
-# Reload nginx if running
-if brew services list | grep -q "nginx started"; then
-    echo -e "  ${BLUE}→${NC} Reloading nginx..."
-    brew services reload nginx 2>/dev/null || true
+# Reload services if running
+if command -v brew &>/dev/null; then
+    brew services list 2>/dev/null | grep -q "dnsmasq.*started" && brew services restart dnsmasq 2>/dev/null || true
+    brew services list 2>/dev/null | grep -q "nginx.*started"   && brew services reload  nginx    2>/dev/null || true
 fi
 
 echo ""
 echo -e "${GREEN}╔══════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║  Localmac has been uninstalled. ✓    ║${NC}"
+echo -e "${GREEN}║   Localmac has been uninstalled ✓    ║${NC}"
 echo -e "${GREEN}╚══════════════════════════════════════╝${NC}"
 echo ""
 echo "Your site files in ~/Sites and databases are untouched."
