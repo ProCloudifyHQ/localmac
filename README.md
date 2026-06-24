@@ -32,115 +32,155 @@ Localmac is a native macOS menu-bar app that gives you a complete local web deve
 | **WordPress** | One-click: auto DB + download + wp-config |
 | **Laravel** | One-click: composer create-project + .env |
 | **Dashboard** | Live CPU / RAM / Disk / Network stats |
-| **Updates** | In-app update checker + Homebrew support |
+| **Updates** | In-app update checker + changelog display |
 | **Auto-start** | Launches at login, no password prompts |
+
+---
+
+## Requirements
+
+| Requirement | Details |
+|---|---|
+| **macOS** | 13.0 Ventura or later |
+| **Architecture** | Apple Silicon (M1/M2/M3/M4) or Intel |
+| **Homebrew** | Installed automatically if missing |
 
 ---
 
 ## Installation
 
-### Via Homebrew (recommended)
+### Option 1 — Homebrew (Recommended)
+
+| Step | Command |
+|---|---|
+| 1. Add tap | `brew tap ProCloudifyHQ/localmac` |
+| 2. Install | `brew install --cask localmac` |
 
 ```bash
 brew tap ProCloudifyHQ/localmac
 brew install --cask localmac
 ```
 
-### Direct Download
-
-Download the latest `.dmg` from [GitHub Releases](https://github.com/ProCloudifyHQ/localmac/releases).
-
-1. Open the `.dmg`
-2. Drag **Localmac.app** to your Applications folder
-3. Open it — if macOS shows a security warning, go to **System Settings → Privacy & Security → Open Anyway**
-
 ---
 
-## Requirements
+### Option 2 — Direct Download
 
-- macOS 13.0 Ventura or later
-- Apple Silicon (M1/M2/M3/M4) or Intel Mac
-- [Homebrew](https://brew.sh) — installed automatically if missing
+| Step | Action |
+|---|---|
+| 1. Download | Get the latest `.dmg` from [GitHub Releases](https://github.com/ProCloudifyHQ/localmac/releases) |
+| 2. Open | Double-click the `.dmg` file |
+| 3. Install | Drag **Localmac.app** → Applications folder |
+| 4. Open | Launch from Applications |
+
+> **macOS security warning?** Since Localmac is free & open-source (not signed with a paid Apple certificate), macOS may show an "unidentified developer" warning on first launch.
+>
+> **Fix:** Go to **System Settings → Privacy & Security → Open Anyway**
 
 ---
 
 ## Updating
 
-### In-app
-Click the Localmac menu-bar icon → **Check for Updates**
-
-### Via Homebrew
-```bash
-brew upgrade --cask localmac
-```
-
----
-
-## One-Click WordPress Setup
-
-1. Click **+** in the Sites tab
-2. Enter a site name (e.g. `myshop`)
-3. Select **WordPress** as the type
-4. Choose your PHP version
-5. Click **Create Site**
-
-Localmac will automatically:
-- Create the database
-- Download the latest WordPress
-- Write `wp-config.php`
-- Set up SSL and the `.test` domain
-- Open the site in your browser
-
----
-
-## Services Managed
-
-| Service | Purpose |
+| Method | Command |
 |---|---|
-| Nginx / Apache | Web server |
-| MySQL / MariaDB | Relational database |
-| PostgreSQL | Relational database |
-| Redis | In-memory cache |
-| Memcached | In-memory cache |
-| Mailpit | Local email testing |
-| dnsmasq | `*.test` DNS resolution |
+| **In-app** | Click menu-bar icon → **Check for Updates** — shows changelog and download button |
+| **Homebrew** | `brew upgrade --cask localmac` |
 
 ---
 
 ## Uninstall
 
-One command removes Localmac and all its files:
+Two modes available — choose based on what you want to keep.
+
+### Standard Uninstall — keeps your site files and databases
+
+| Method | Command |
+|---|---|
+| **Homebrew** | `brew uninstall --cask --zap localmac` |
+| **Manual / curl** | `curl -fsSL https://raw.githubusercontent.com/ProCloudifyHQ/localmac/main/Installer/uninstall.sh \| bash` |
+| **Local script** | `bash Installer/uninstall.sh` |
+
+```bash
+# If installed via Homebrew
+brew uninstall --cask --zap localmac
+```
+
+```bash
+# If installed manually (or works for both)
+curl -fsSL https://raw.githubusercontent.com/ProCloudifyHQ/localmac/main/Installer/uninstall.sh | bash
+```
+
+**What gets removed:**
+
+| Item | Removed? |
+|---|---|
+| Localmac.app | ✅ |
+| `~/.localmac` (config + SSL certs) | ✅ |
+| Preferences & logs | ✅ |
+| Nginx site configs (`*.test.conf`) | ✅ |
+| dnsmasq `.test` rule | ✅ |
+| `/etc/resolver/test` | ✅ |
+| Homebrew tap | ✅ |
+| Launch at login entry | ✅ |
+| `~/Sites` files | ❌ Kept |
+| MySQL / MariaDB databases | ❌ Kept |
+| PostgreSQL databases | ❌ Kept |
+| PHP, Nginx, MySQL services | ❌ Kept |
+
+---
+
+### Complete Uninstall — removes everything including sites and databases
+
+> ⚠️ **Warning:** This permanently deletes all your site files and databases. This cannot be undone.
+
+Run the uninstall script and select **mode 2** when prompted:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ProCloudifyHQ/localmac/main/Installer/uninstall.sh | bash
 ```
 
-Or if you already have the repo cloned:
+Type `DELETE` when prompted to confirm.
 
-```bash
-bash Installer/uninstall.sh
-```
+**What gets removed (in addition to Standard):**
 
-This removes the app, config, SSL certs, nginx configs, DNS rules, and Homebrew tap.  
-Your site files in `~/Sites` and your databases are **never** touched.
+| Item | Removed? |
+|---|---|
+| Everything in Standard Uninstall | ✅ |
+| All files in `~/Sites` | ✅ |
+| All MySQL / MariaDB user databases | ✅ |
+| All PostgreSQL user databases | ✅ |
+| System databases (`mysql`, `postgres`, etc.) | ❌ Never touched |
+| Homebrew, PHP, Nginx, MySQL services | ❌ Never touched |
+
+---
+
+## One-Click WordPress Setup
+
+| Step | Action |
+|---|---|
+| 1 | Click **+** in the Sites tab |
+| 2 | Enter a site name (e.g. `myshop`) |
+| 3 | Select **WordPress** as the type |
+| 4 | Choose your PHP version |
+| 5 | Click **Create Site** |
+
+Localmac automatically downloads WordPress, creates the database, writes `wp-config.php`, sets up SSL and the `.test` domain. Open the URL in your browser and set your site title and admin account — done.
 
 ---
 
 ## Building from Source
 
+| Requirement | Install |
+|---|---|
+| Xcode 16+ | [Mac App Store](https://apps.apple.com/app/xcode/id497799835) |
+| xcodegen | `brew install xcodegen` |
+
 ```bash
 git clone https://github.com/ProCloudifyHQ/localmac.git
 cd localmac
-
-# Generate Xcode project
 brew install xcodegen
 xcodegen generate
-
-# Open in Xcode
 open Localmac.xcodeproj
 ```
-
-> Swift 5.9+ and Xcode 16+ required.
 
 ---
 
@@ -148,24 +188,31 @@ open Localmac.xcodeproj
 
 ```
 Localmac/
-├── Localmac/          # SwiftUI menu-bar app
-├── LocalmacCore/      # Swift Package — service engine
-├── .github/workflows/ # CI + release pipeline
-├── Formula/           # Homebrew cask
-└── Installer/         # Build & signing config
+├── Localmac/           # SwiftUI menu-bar app
+├── LocalmacCore/       # Swift Package — service engine
+├── .github/workflows/  # CI + release pipeline
+├── Installer/          # build-dmg.sh · uninstall.sh · ExportOptions
+├── Formula/            # Homebrew cask formula
+└── CHANGELOG.md        # Full version history
 ```
 
 ---
 
 ## Contributing
 
-Pull requests are welcome. For major changes, please open an issue first.
+| Step | Command |
+|---|---|
+| 1. Fork | Click **Fork** on GitHub |
+| 2. Branch | `git checkout -b feature/my-feature` |
+| 3. Commit | `git commit -m 'feat: add my feature'` |
+| 4. Push | `git push origin feature/my-feature` |
+| 5. PR | Open a Pull Request on GitHub |
 
-1. Fork the repo
-2. Create your branch: `git checkout -b feature/my-feature`
-3. Commit your changes: `git commit -m 'feat: add my feature'`
-4. Push: `git push origin feature/my-feature`
-5. Open a Pull Request
+---
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for full version history.
 
 ---
 
