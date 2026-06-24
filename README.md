@@ -39,23 +39,15 @@ Localmac is a native macOS menu-bar app that gives you a complete local web deve
 
 ## Requirements
 
-| Requirement | Details |
+| | |
 |---|---|
 | **macOS** | 13.0 Ventura or later |
-| **Architecture** | Apple Silicon (M1/M2/M3/M4) or Intel |
+| **Mac** | Apple Silicon (M1/M2/M3/M4) or Intel |
 | **Homebrew** | Installed automatically if missing |
 
 ---
 
-## Installation
-
-### Option 1 — Homebrew (Recommended)
-
-| Step | Command |
-|---|---|
-| 1. Add tap | `brew tap ProCloudifyHQ/localmac` |
-| 2. Trust tap | `brew trust ProCloudifyHQ/localmac` |
-| 3. Install | `brew install --cask localmac` |
+## Install via Homebrew
 
 ```bash
 brew tap ProCloudifyHQ/localmac
@@ -65,93 +57,75 @@ brew install --cask localmac
 
 ---
 
-### Option 2 — Direct Download
+## Install Manually (DMG)
 
-| Step | Action |
-|---|---|
-| 1. Download | Get the latest `.dmg` from [GitHub Releases](https://github.com/ProCloudifyHQ/localmac/releases) |
-| 2. Open | Double-click the `.dmg` file |
-| 3. Install | Drag **Localmac.app** → Applications folder |
-| 4. Open | Launch from Applications |
+1. Download the latest `.dmg` from [GitHub Releases](https://github.com/ProCloudifyHQ/localmac/releases)
+2. Open the `.dmg` and drag **Localmac.app** to Applications
+3. Launch from Applications
 
-> **macOS security warning?** Since Localmac is free & open-source (not signed with a paid Apple certificate), macOS may show an "unidentified developer" warning on first launch.
->
-> **Fix:** Go to **System Settings → Privacy & Security → Open Anyway**
+> **macOS security warning?** Go to **System Settings → Privacy & Security → Open Anyway**
 
 ---
 
-## Updating
-
-| Method | Command |
-|---|---|
-| **In-app** | Click menu-bar icon → **Check for Updates** — shows changelog and download button |
-| **Homebrew** | `brew upgrade --cask localmac` |
-
----
-
-## Uninstall
-
-Two modes available — choose based on what you want to keep.
-
-### Standard Uninstall — keeps your site files and databases
-
-| Method | Command |
-|---|---|
-| **Homebrew** | `brew uninstall --cask --zap localmac` |
-| **Manual / curl** | `curl -fsSL https://raw.githubusercontent.com/ProCloudifyHQ/localmac/main/Installer/uninstall.sh \| bash` |
-| **Local script** | `bash Installer/uninstall.sh` |
+## Update via Homebrew
 
 ```bash
-# If installed via Homebrew
+brew upgrade --cask localmac
+```
+
+## Update via In-App
+
+Click the menu-bar icon → **Check for Updates** — shows changelog and a download button.
+
+---
+
+## Uninstall via Homebrew
+
+Keeps your site files and databases:
+
+```bash
 brew uninstall --cask --zap localmac
 ```
 
+---
+
+## Uninstall Manually
+
+Keeps your site files and databases:
+
 ```bash
-# If installed manually (or works for both)
 curl -fsSL https://raw.githubusercontent.com/ProCloudifyHQ/localmac/main/Installer/uninstall.sh | bash
 ```
 
-**What gets removed:**
-
-| Item | Removed? |
-|---|---|
-| Localmac.app | ✅ |
-| `~/.localmac` (config + SSL certs) | ✅ |
-| Preferences & logs | ✅ |
-| Nginx site configs (`*.test.conf`) | ✅ |
-| dnsmasq `.test` rule | ✅ |
-| `/etc/resolver/test` | ✅ |
-| Homebrew tap | ✅ |
-| Launch at login entry | ✅ |
-| `~/Sites` files | ❌ Kept |
-| MySQL / MariaDB databases | ❌ Kept |
-| PostgreSQL databases | ❌ Kept |
-| PHP, Nginx, MySQL services | ❌ Kept |
+Select **mode 1** when prompted.
 
 ---
 
-### Complete Uninstall — removes everything including sites and databases
+## Uninstall Everything (Sites + Databases)
 
-> ⚠️ **Warning:** This permanently deletes all your site files and databases. This cannot be undone.
-
-Run the uninstall script and select **mode 2** when prompted:
+> ⚠️ **Warning:** Permanently deletes all site files and databases. Cannot be undone.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ProCloudifyHQ/localmac/main/Installer/uninstall.sh | bash
 ```
 
-Type `DELETE` when prompted to confirm.
+Select **mode 2** and type `DELETE` to confirm.
 
-**What gets removed (in addition to Standard):**
+**What mode 2 removes:**
 
-| Item | Removed? |
+| Item | Removed |
 |---|---|
-| Everything in Standard Uninstall | ✅ |
+| Localmac.app | ✅ |
+| Config, SSL certs (`~/.localmac`) | ✅ |
+| Preferences & logs | ✅ |
+| Nginx site configs | ✅ |
+| dnsmasq `.test` rule | ✅ |
+| Homebrew tap | ✅ |
 | All files in `~/Sites` | ✅ |
-| All MySQL / MariaDB user databases | ✅ |
-| All PostgreSQL user databases | ✅ |
-| System databases (`mysql`, `postgres`, etc.) | ❌ Never touched |
-| Homebrew, PHP, Nginx, MySQL services | ❌ Never touched |
+| All MySQL / MariaDB databases | ✅ |
+| All PostgreSQL databases | ✅ |
+| PHP, Nginx, MySQL services | ❌ Kept |
+| System databases | ❌ Kept |
 
 ---
 
