@@ -7,7 +7,7 @@ cask "localmac" do
   desc "Free local web development environment for macOS"
   homepage "https://github.com/ProCloudifyHQ/localmac"
 
-  depends_on macos: ">= :ventura"
+  depends_on macos: :ventura
 
   app "Localmac.app"
 
