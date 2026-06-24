@@ -54,10 +54,12 @@ Localmac is a native macOS menu-bar app that gives you a complete local web deve
 | Step | Command |
 |---|---|
 | 1. Add tap | `brew tap ProCloudifyHQ/localmac` |
-| 2. Install | `brew install --cask localmac` |
+| 2. Trust tap | `brew trust ProCloudifyHQ/localmac` |
+| 3. Install | `brew install --cask localmac` |
 
 ```bash
 brew tap ProCloudifyHQ/localmac
+brew trust ProCloudifyHQ/localmac
 brew install --cask localmac
 ```
 
