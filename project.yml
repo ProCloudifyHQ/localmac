@@ -1,0 +1,57 @@
+name: Localmac
+options:
+  bundleIdPrefix: com.localmac
+  deploymentTarget:
+    macOS: "13.0"
+  xcodeVersion: "16.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MACOSX_DEPLOYMENT_TARGET: "13.0"
+    ENABLE_HARDENED_RUNTIME: YES
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: ""
+
+packages:
+  LocalmacCore:
+    path: LocalmacCore
+
+targets:
+  Localmac:
+    type: application
+    platform: macOS
+    sources:
+      - Localmac
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.localmac.app
+        PRODUCT_NAME: Localmac
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_FILE: Localmac/Resources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Localmac/Resources/Localmac.entitlements
+        LD_RUNPATH_SEARCH_PATHS: "@executable_path/../Frameworks"
+    entitlements:
+      path: Localmac/Resources/Localmac.entitlements
+    dependencies:
+      - package: LocalmacCore
+    preBuildScripts:
+      - name: SwiftLint
+        script: |
+          if which swiftlint > /dev/null; then
+            swiftlint
+          fi
+        basedOnDependencyAnalysis: false
+
+  LocalmacTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - Tests/LocalmacCoreTests
+    dependencies:
+      - package: LocalmacCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.localmac.tests

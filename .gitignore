@@ -1,0 +1,32 @@
+# Xcode
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+DerivedData/
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Secrets (never commit these)
+*.p12
+*.cer
+*.mobileprovision
+Secrets/
+secrets.yml
+.env
+
+# Installer build artifacts
+Installer/build/
+*.dmg
+*.pkg
