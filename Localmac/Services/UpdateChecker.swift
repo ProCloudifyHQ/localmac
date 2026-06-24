@@ -33,12 +33,12 @@ final class UpdateChecker: ObservableObject {
     @Published var latestRelease: GitHubRelease?
     @Published var isChecking = false
     @Published var updateAvailable = false
+    @Published var showUpdateSheet = false
 
     private let apiURL = URL(string: "https://api.github.com/repos/ProCloudifyHQ/localmac/releases/latest")!
     private let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
 
     func checkForUpdatesOnLaunch() {
-        // Only auto-check once per day
         let lastCheck = UserDefaults.standard.double(forKey: "lastUpdateCheck")
         let oneDayAgo = Date().timeIntervalSince1970 - 86400
         guard lastCheck < oneDayAgo else { return }
@@ -56,9 +56,10 @@ final class UpdateChecker: ObservableObject {
             let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
             latestRelease = release
             updateAvailable = isNewerVersion(release.version, than: currentVersion)
+            if updateAvailable { showUpdateSheet = true }
             UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "lastUpdateCheck")
         } catch {
-            // Silent fail — update check is non-critical
+            // Silent fail — non-critical
         }
     }
 

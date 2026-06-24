@@ -11,8 +11,8 @@ env:
 
 jobs:
   build:
-    name: Build, Sign & Notarize
-    runs-on: macos-14  # Apple Silicon runner
+    name: Build, Sign, Notarize & Release
+    runs-on: macos-14
 
     steps:
       - name: Checkout
@@ -21,7 +21,24 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_16.app
 
+      - name: Extract version
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          NOTES=$(awk "/^## \[$VERSION\]/{found=1; next} found && /^## \[/{exit} found{print}" CHANGELOG.md)
+          echo "NOTES<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Install create-dmg
+        run: brew install create-dmg
+
       - name: Import signing certificate
+        if: ${{ secrets.DEVELOPER_ID_CERTIFICATE_P12 != '' }}
         env:
           CERTIFICATE_P12: ${{ secrets.DEVELOPER_ID_CERTIFICATE_P12 }}
           CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
@@ -35,26 +52,45 @@ jobs:
           security import $RUNNER_TEMP/cert.p12 -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
           security list-keychain -d user -s $KEYCHAIN_PATH
 
-      - name: Build archive
+      - name: Build archive (signed)
+        if: ${{ secrets.DEVELOPER_ID_CERTIFICATE_P12 != '' }}
         run: |
           xcodebuild archive \
             -scheme "$SCHEME" \
             -archivePath "$RUNNER_TEMP/$APP_NAME.xcarchive" \
             -configuration Release \
             CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Developer ID Application" \
-            | xcpretty
+            CODE_SIGN_IDENTITY="Developer ID Application"
 
-      - name: Export app
+      - name: Build archive (unsigned)
+        if: ${{ secrets.DEVELOPER_ID_CERTIFICATE_P12 == '' }}
+        run: |
+          xcodebuild archive \
+            -scheme "$SCHEME" \
+            -archivePath "$RUNNER_TEMP/$APP_NAME.xcarchive" \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Export app (signed)
+        if: ${{ secrets.DEVELOPER_ID_CERTIFICATE_P12 != '' }}
         run: |
           xcodebuild -exportArchive \
             -archivePath "$RUNNER_TEMP/$APP_NAME.xcarchive" \
             -exportPath "$RUNNER_TEMP/export" \
             -exportOptionsPlist Installer/ExportOptions.plist
 
+      - name: Export app (unsigned)
+        if: ${{ secrets.DEVELOPER_ID_CERTIFICATE_P12 == '' }}
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/$APP_NAME.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist Installer/ExportOptions-unsigned.plist
+
       - name: Create DMG
         run: |
-          brew install create-dmg
           create-dmg \
             --volname "$APP_NAME" \
             --window-size 540 380 \
@@ -65,6 +101,7 @@ jobs:
             "$RUNNER_TEMP/export/$APP_NAME.app"
 
       - name: Notarize DMG
+        if: ${{ secrets.DEVELOPER_ID_CERTIFICATE_P12 != '' }}
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -77,26 +114,31 @@ jobs:
             --wait
           xcrun stapler staple "$RUNNER_TEMP/$APP_NAME-${{ github.ref_name }}.dmg"
 
-      - name: Upload to GitHub Release
+      - name: Get DMG SHA256
+        id: sha
+        run: |
+          SHA=$(shasum -a 256 "$RUNNER_TEMP/$APP_NAME-${{ github.ref_name }}.dmg" | awk '{print $1}')
+          echo "SHA=$SHA" >> $GITHUB_OUTPUT
+
+      - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            ${{ runner.temp }}/${{ env.APP_NAME }}-${{ github.ref_name }}.dmg
-          generate_release_notes: true
+          name: "Localmac ${{ github.ref_name }}"
+          body: ${{ steps.changelog.outputs.NOTES }}
+          files: ${{ runner.temp }}/${{ env.APP_NAME }}-${{ github.ref_name }}.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update Homebrew Cask
         env:
-          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          DMG_SHA=$(shasum -a 256 "$RUNNER_TEMP/$APP_NAME-${{ github.ref_name }}.dmg" | awk '{print $1}')
-          VERSION="${{ github.ref_name }}"
-          VERSION="${VERSION#v}"
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          SHA="${{ steps.sha.outputs.SHA }}"
           sed -i '' "s/version .*/version \"$VERSION\"/" Formula/localmac.rb
-          sed -i '' "s/sha256 .*/sha256 \"$DMG_SHA\"/" Formula/localmac.rb
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          sed -i '' "s/sha256 .*/sha256 \"$SHA\"/" Formula/localmac.rb
+          git config user.name "ProCloudifyHQ"
+          git config user.email "hello@procloudify.com"
           git add Formula/localmac.rb
-          git commit -m "chore: bump cask to $VERSION"
+          git commit -m "chore: bump cask to v$VERSION"
           git push

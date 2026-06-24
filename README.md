@@ -107,6 +107,25 @@ Localmac will automatically:
 
 ---
 
+## Uninstall
+
+One command removes Localmac and all its files:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ProCloudifyHQ/localmac/main/Installer/uninstall.sh | bash
+```
+
+Or if you already have the repo cloned:
+
+```bash
+bash Installer/uninstall.sh
+```
+
+This removes the app, config, SSL certs, nginx configs, DNS rules, and Homebrew tap.  
+Your site files in `~/Sites` and your databases are **never** touched.
+
+---
+
 ## Building from Source
 
 ```bash
