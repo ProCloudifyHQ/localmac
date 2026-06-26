@@ -11,6 +11,13 @@ cask "localmac" do
 
   app "Localmac.app"
 
+  # Automatically remove quarantine so Gatekeeper doesn't block the unsigned app
+  postflight do
+    system_command "/usr/bin/xattr",
+      args: ["-dr", "com.apple.quarantine", "#{appdir}/Localmac.app"],
+      sudo: false
+  end
+
   uninstall quit: "com.localmac.app"
 
   zap trash: [
@@ -20,23 +27,22 @@ cask "localmac" do
     "~/Library/Logs/Localmac",
     "~/Library/Saved Application State/com.localmac.app.savedState",
   ],
-  rmdir: [
-    "~/.localmac/certs",
-    "~/.localmac/sites",
-  ],
   script: {
     executable: "/bin/bash",
     args: ["-c", <<~EOS
-      # Remove nginx site configs
       find /opt/homebrew/etc/nginx/servers -name "*.test.conf" -delete 2>/dev/null || true
-      # Remove dnsmasq .test rule
       sed -i '' '/address=\/.test\/127.0.0.1/d' /opt/homebrew/etc/dnsmasq.conf 2>/dev/null || true
-      # Remove DNS resolver
       sudo rm -f /etc/resolver/test 2>/dev/null || true
-      # Reload services
       /opt/homebrew/bin/brew services restart dnsmasq 2>/dev/null || true
       /opt/homebrew/bin/brew services reload nginx 2>/dev/null || true
     EOS
     ],
   }
+
+  caveats <<~EOS
+    Localmac is open-source and not signed with an Apple Developer certificate.
+    The postflight script has already removed the macOS quarantine flag for you.
+    If you still see a security warning, run:
+      xattr -dr com.apple.quarantine /Applications/Localmac.app
+  EOS
 end
