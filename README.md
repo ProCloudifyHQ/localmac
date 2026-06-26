@@ -55,6 +55,11 @@ brew trust ProCloudifyHQ/localmac
 brew install --cask localmac
 ```
 
+> **macOS Gatekeeper warning after install?** Run this once:
+> ```bash
+> xattr -dr com.apple.quarantine /Applications/Localmac.app
+> ```
+
 ---
 
 ## Install Manually (DMG)
@@ -63,7 +68,22 @@ brew install --cask localmac
 2. Open the `.dmg` and drag **Localmac.app** to Applications
 3. Launch from Applications
 
-> **macOS security warning?** Go to **System Settings → Privacy & Security → Open Anyway**
+> **"Apple could not verify Localmac is free of malware"?**
+>
+> This appears because Localmac is free & open-source and not signed with a paid Apple Developer certificate ($99/yr). The app is safe — you can read every line of source code in this repo.
+>
+> **Fix — choose one:**
+>
+> **Option A — Terminal (easiest):**
+> ```bash
+> xattr -dr com.apple.quarantine /Applications/Localmac.app
+> ```
+>
+> **Option B — System Settings:**
+> Go to **System Settings → Privacy & Security** → scroll down → click **"Open Anyway"**
+>
+> **Option C — Right-click:**
+> Right-click `Localmac.app` in Applications → **Open** → **Open** again in the dialog
 
 ---
 
