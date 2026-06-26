@@ -154,8 +154,9 @@ jobs:
           sed -i '' "s/sha256 .*/sha256 \"$SHA\"/" Formula/localmac.rb
           git config user.name "ProCloudifyHQ"
           git config user.email "hello@procloudify.com"
+          git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/ProCloudifyHQ/localmac.git"
           git add Formula/localmac.rb
           git commit -m "chore: bump cask to v$VERSION"
-          git push
+          git push origin main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

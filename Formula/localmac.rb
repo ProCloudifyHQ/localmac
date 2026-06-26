@@ -1,6 +1,6 @@
 cask "localmac" do
   version "1.0.0"
-  sha256 :no_check
+  sha256 "210c46095451492fde9d6a1dbc3c0fbf5e98b6a43ec5cad33bbdbba5f3c78643"
 
   url "https://github.com/ProCloudifyHQ/localmac/releases/download/v#{version}/Localmac-v#{version}.dmg"
   name "Localmac"
