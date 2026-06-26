@@ -1,45 +1,67 @@
 import AppKit
 import SwiftUI
 
-@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
-    private let updateChecker = UpdateChecker()
+    private var eventMonitor: Any?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.setActivationPolicy(.accessory) // menu-bar only, no Dock icon
-
+        NSApp.setActivationPolicy(.accessory)
         setupStatusItem()
-        updateChecker.checkForUpdatesOnLaunch()
+        Task { @MainActor in
+            UpdateChecker().checkForUpdatesOnLaunch()
+        }
     }
 
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
-        if let button = statusItem?.button {
-            button.image = NSImage(systemSymbolName: "server.rack", accessibilityDescription: "Localmac")
-            button.action = #selector(togglePopover)
-            button.target = self
-        }
+        guard let button = statusItem?.button else { return }
+        button.image = NSImage(systemSymbolName: "server.rack", accessibilityDescription: "Localmac")
+        button.image?.isTemplate = true
+        button.action = #selector(togglePopover(_:))
+        button.target = self
 
         let popover = NSPopover()
-        popover.contentSize = NSSize(width: 380, height: 560)
-        popover.behavior = .transient
+        popover.contentSize = NSSize(width: 380, height: 540)
+        popover.behavior = .applicationDefined
+        popover.animates = true
         popover.contentViewController = NSHostingController(rootView: MenuBarView())
         self.popover = popover
+
+        // Close popover when clicking outside
+        eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            self?.closePopover()
+        }
     }
 
-    @objc private func togglePopover() {
-        guard let button = statusItem?.button else { return }
-        if let popover, popover.isShown {
-            popover.performClose(nil)
+    @objc func togglePopover(_ sender: AnyObject?) {
+        guard let popover else { return }
+        if popover.isShown {
+            closePopover()
         } else {
-            popover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            openPopover()
         }
+    }
+
+    private func openPopover() {
+        guard let button = statusItem?.button, let popover else { return }
+        NSApp.activate(ignoringOtherApps: true)
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+    }
+
+    private func closePopover() {
+        popover?.performClose(nil)
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false
+    }
+
+    deinit {
+        if let monitor = eventMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
     }
 }
